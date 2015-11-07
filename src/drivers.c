@@ -131,6 +131,9 @@ extern SR_PRIV struct sr_dev_driver siemens_b102x_driver_info;
 #ifdef HAVE_HW_OPENBENCH_LOGIC_SNIFFER
 extern SR_PRIV struct sr_dev_driver ols_driver_info;
 #endif
+#ifdef HAVE_HW_OWON_VDS
+extern SR_PRIV struct sr_dev_driver owon_vds_driver_info;
+#endif
 #ifdef HAVE_HW_PIPISTRELLO_OLS
 extern SR_PRIV struct sr_dev_driver p_ols_driver_info;
 #endif
@@ -297,6 +300,9 @@ SR_PRIV struct sr_dev_driver **drivers_lists[] = {
 #endif
 #ifdef HAVE_HW_OPENBENCH_LOGIC_SNIFFER
 	(DRVS) {&ols_driver_info, NULL},
+#endif
+#ifdef HAVE_HW_OWON_VDS
+	(DRVS) {&owon_vds_driver_info, NULL},
 #endif
 #ifdef HAVE_HW_PIPISTRELLO_OLS
 	(DRVS) {&p_ols_driver_info, NULL},
