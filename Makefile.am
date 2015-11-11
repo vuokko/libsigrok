@@ -22,6 +22,9 @@ ACLOCAL_AMFLAGS = -I m4
 AM_LIBTOOLFLAGS = --silent
 GNUMAKEFLAGS = --no-print-directory
 
+# distutils/setuptools cause trouble on distcheck. Disable for now.
+DISTCHECK_CONFIGURE_FLAGS = --disable-python
+
 FIRMWARE_DIR = $(datadir)/sigrok-firmware
 
 local_includes = -Iinclude -I$(srcdir)/include -I$(srcdir)/src -I.
@@ -98,6 +101,7 @@ libsigrok_la_SOURCES += \
 
 # SCPI support
 libsigrok_la_SOURCES += \
+	src/scpi.h \
 	src/scpi/scpi.c \
 	src/scpi/helpers.c \
 	src/scpi/scpi_tcp.c
@@ -502,6 +506,7 @@ EXTRA_DIST = \
 	bindings/java/org/sigrok/core/interfaces/LogCallback.java \
 	bindings/swig/classes.i \
 	bindings/swig/doc.py \
+	bindings/swig/templates.i \
 	contrib/gnuplot_chronovu_la8.gpi \
 	contrib/gnuplot_rigol_ds1xx2.gpi \
 	contrib/gnuplot_usbeesx.gpi \
@@ -537,6 +542,7 @@ tests_main_LDADD = libsigrok.la $(SR_EXTRA_LIBS) $(TESTS_LIBS)
 
 BUILD_EXTRA =
 INSTALL_EXTRA =
+UNINSTALL_EXTRA =
 CLEAN_EXTRA =
 
 if BINDINGS_CXX
@@ -574,6 +580,7 @@ bindings/cxx/classes.lo: bindings/cxx/classes.cpp bindings/cxx/enums.cpp \
 cxx-clean:
 	rm -rf doxy/
 	rm -rf bindings/cxx/doxy/
+	rm -f bindings/swig/enums.i
 	rm -f bindings/cxx/enums.cpp
 	rm -f bindings/cxx/include/libsigrokcxx/enums.hpp
 	rm -f bindings/cxx/enums.timestamp
@@ -692,8 +699,12 @@ java-install:
 	$(INSTALL) -d $(DESTDIR)$(datadir)/java
 	$(INSTALL) $(JJAR) $(DESTDIR)$(datadir)/java
 
+java-uninstall:
+	-rm -f $(DESTDIR)$(datadir)/java/sigrok-core.jar
+	-rm -f $(DESTDIR)$(libdir)/jni/libsigrok_java_core_classes.so
+
 java-clean:
-	-$(AM_V_at)rm -f $(java_cleanfiles)
+	-$(AM_V_at)rm -f $(java_cleanfiles) $(JDOC)
 	-$(AM_V_at)rm -fr $(JDIR)/doxy
 
 java-doc:
@@ -701,19 +712,26 @@ java-doc:
 
 BUILD_EXTRA += java-build
 INSTALL_EXTRA += java-install
+UNINSTALL_EXTRA += java-uninstall
 CLEAN_EXTRA += java-clean
 
 endif
 
 all-local: $(BUILD_EXTRA)
 install-exec-local: $(INSTALL_EXTRA)
+uninstall-local: $(UNINSTALL_EXTRA)
 clean-local: $(CLEAN_EXTRA)
 
-MAINTAINERCLEANFILES = ChangeLog
+.PHONY: dist-changelog
 
-.PHONY: ChangeLog
-ChangeLog:
-	git --git-dir '$(top_srcdir)/.git' log >$@ || touch $@
+dist-hook: dist-changelog
 
-dist-hook: ChangeLog
+dist-changelog:
+	$(AM_V_at)if test ! -d '$(top_srcdir)/.git'; then \
+		cp -f '$(top_srcdir)/ChangeLog' "$(top_distdir)/ChangeLog"; \
+	elif git -C '$(top_srcdir)' log >.ChangeLog.tmp; then \
+		mv -f .ChangeLog.tmp "$(top_distdir)/ChangeLog"; \
+	else \
+		rm -f .ChangeLog.tmp; exit 1; \
+	fi
 
