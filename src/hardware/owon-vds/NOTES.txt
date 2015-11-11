@@ -1,0 +1,431 @@
+This text is still work in progress.
+
+Device
+lsusb -vvv
+
+Bus 001 Device 013: ID 5345:1234 Owon PDS6062T Oscilloscope
+Device Descriptor:
+  bLength                18
+  bDescriptorType         1
+  bcdUSB               2.00
+  bDeviceClass            0 
+  bDeviceSubClass         0 
+  bDeviceProtocol         0 
+  bMaxPacketSize0        64
+  idVendor           0x5345 Owon
+  idProduct          0x1234 PDS6062T Oscilloscope  ### Maybe not...
+  bcdDevice            2.00
+  iManufacturer           1 Oscilloscope
+  iProduct                2 Oscilloscope
+  iSerial                 3 VDS2062                #### This is important. It has to start with VDS
+  bNumConfigurations      1
+  Configuration Descriptor:
+    bLength                 9
+    bDescriptorType         2
+    wTotalLength           32
+    bNumInterfaces          1
+    bConfigurationValue     1
+    iConfiguration          0 
+    bmAttributes         0xc0
+      Self Powered
+    MaxPower              500mA
+    Interface Descriptor:
+      bLength                 9
+      bDescriptorType         4
+      bInterfaceNumber        0
+      bAlternateSetting       0
+      bNumEndpoints           2
+      bInterfaceClass         5 Physical Interface Device
+      bInterfaceSubClass      6 
+      bInterfaceProtocol     80 
+      iInterface              0 
+      Endpoint Descriptor:
+        bLength                 7
+        bDescriptorType         5
+        bEndpointAddress     0x81  EP 1 IN
+        bmAttributes            2
+          Transfer Type            Bulk
+          Synch Type               None
+          Usage Type               Data
+        wMaxPacketSize     0x0200  1x 512 bytes
+        bInterval               0
+      Endpoint Descriptor:
+        bLength                 7
+        bDescriptorType         5
+        bEndpointAddress     0x03  EP 3 OUT
+        bmAttributes            2
+          Transfer Type            Bulk
+          Synch Type               None
+          Usage Type               Data
+        wMaxPacketSize     0x0200  1x 512 bytes
+        bInterval               0
+Device Qualifier (for other device speed):
+  bLength                10
+  bDescriptorType         6
+  bcdUSB               2.00
+  bDeviceClass            0 
+  bDeviceSubClass         0 
+  bDeviceProtocol         0 
+  bMaxPacketSize0        64
+  bNumConfigurations      1
+Device Status:     0x7301
+  Self Powered                       ### BULLSHIT!
+        
+
+Protocol
+
+Device is identified by USB ID 0x5345:0x1234
+lsusb gives 5345:1234 Owon PDS6062T Oscilloscope
+
+Communication is done with URB_BULK
+host -> endpoint 255.3
+endpoint 255.1 -> host
+
+Protocol primitives are
+":SDSLCAN#"
+":SDSLAUT#"
+":SDSLFOR#"
+":SDSLF50#"
+":SDSLCSP0"
+":SDSLCRS0"
+":SDSLSTP0"
+":SDSLVER#"             paragraph 1
+":SDSLRST#"
+":SDSLPFS0#"
+":SDSLFTS#"
+":SDSLFTS?#"
+":SDSLFTS0"
+"MDP"                   paragraph 2.1
+"MTR"                   paragraph 2.2
+"MCH"                   paragraph 2.3
+"MAQ"                   paragraph 2.4 
+"MSYOUT"                paragraph 2.5
+"MNT"                   paragraph 2.6
+"MFT"                   paragraph 2.7
+"MHR"                   paragraph 2.8
+":SDSLRUN#"             paragraph 3.1 
+":SDSLSTP#"             paragraph 3.2
+":SDSLCSP#"             paragraph 3.3
+":SDSLCRS#"             paragraph 3.3
+":M0000"
+":AJ"
+":AJRCRS0000"
+":AJRCRS#"
+":SGAL#"                paragraph 4.1
+":SGAD"
+":SGD"                  paragraph 4.2
+":SGDM"
+
+1. Identifying device
+
+When Owon program starts it sends :SDSLVER# request and then receives two packets.
+First reply
+                                        3a 53 44 53 4c               :SDSL
+0020  56 45 52 53 50 42 56 44  53 32 30 36 32 00 00 00   VERSPBVD S2062...
+0030  3f                                                 ?
+
+:SDSLVERSPBVDS2062 22 bytes Reply starts with command echo without # and gives
+device type. That 0x00 0x00 0x00 0x 3f is the size of next packet.
+
+Next reply packet:
+                                        31 56 35 2e 30               1V5.0
+0020  3b 32 56 44 53 32 30 36  xx xx xx xx xx xx xx xx   ;2VDS206 xxxxxxxx
+0030  3b 33 00 01 01 00 02 01  03 00 04 00 05 01 06 01   ;3...... ........
+0040  07 00 08 01 09 00 0a 00  0b 00 3b 34 00 3b 35 01   ........ ..;4.;5.
+0050  3b 36 01 3b 37 01 3b 38  01 3b                     ;6.;7.;8 .;
+
+Semicolon separated values.
+1: Board version
+2: Board series (and serial number after type
+3: Languages? even byte gives language index, odd enables with 1. Some regional control?
+00    01 01     00  02 01  03 00   04 00  05 01 06 01 07 00  08    01 09 00  0a 00  0b    00
+zh_CN    zh_TW      en     fr      es     ru    de    pl     pt_BR    it     ja     ko_KR      LANGUAGE
+      EN        DIS    EN     DIS     DIS    EN    EN    DIS       EN    DIS    DIS       DIS  ON/OFF
+4: Not used. ISNEUTRAL???
+5: Is plugratebyfile ???
+6: NOP Propably encrypted firmware.
+7: Is new single trig. ???
+8: unify colck chip... colck typo not by me :)
+
+From end of InfoParser.class
+VERSION = '1'
+SERIES = '2'
+LANGUAGE = '3'
+ISNEUTRAL = '4'
+IS10PLUG = '5'
+ISENCRYPT = '6'
+ISNewSINGLETRG = '7'
+ISUNIFYCLOCKCHIP = '8'
+
+Questions:
+
+What are fields 4 to 8? and how they change the behaviour of the Java software?
+
+2. Setting up the scope
+
+0010                                    3a 4d 00 00 00               :M...
+0020  04 4d 44 50 01                                     .MDP.
+
+In the beginning there is :M 0x00 0x00 0x00 0x00 And the length of the message.
+This header is 
+2.1 MDP
+
+Set Memory Deep Index. In capture it is set to 1.
+
+Questions:
+
+What is deep memory and what do we want from it?
+
+2.2 MTR - Manage Trigger
+
+0010                                    3a 4d 00 00 00               :M...
+0020  8c 4d 54 52 73 00 65 02  00 4d 54 52 73 00 65 03   .MTRs.e. .MTRs.e.
+0030  00 4d 54 52 73 00 65 05  00 4d 54 52 73 00 65 04   .MTRs.e. .MTRs.e.
+0040  00 00 00 01 4d 54 52 73  00 65 06 00 00 00 32 4d   ....MTRs .e....2M
+0050  43 48 00 6f 01 4d 43 48  00 63 01 4d 43 48 00 76   CH.o.MCH .c.MCH.v
+0060  05 4d 43 48 00 7a 00 00  00 32 4d 43 48 00 62 00   .MCH.z.. .2MCH.b.
+0070  4d 43 48 01 6f 01 4d 43  48 01 63 01 4d 43 48 01   MCH.o.MC H.c.MCH.
+0080  76 05 4d 43 48 01 7a ff  ff ff ce 4d 43 48 01 62   v.MCH.z. ...MCH.b
+0090  00 4d 41 51 00 4d 53 59  4f 55 54 01 4d 46 54 00   .MAQ.MSY OUT.MFT.
+00a0  4d 48 52 62 10 4d 48 52  76 00 00 00 00            MHRb.MHR v....
+
+This packet has also other commands than MTR
+
+012 |  3  |    4   |   5    |    6    |  ... 
+MTR |mode |channel |trgType |property | Values
+     's'ingle
+     'a'lternative
+
+             Channel as byte
+             External trgger is 0x64
+             Channels are indexed from 0
+
+                     'e'dge
+                     'v'ideo
+                     's'lope
+                     'p'pulse
+
+                             trigger property
+
+Edge properties:
+
+Property        | Number | Values  | Notes
+Coupling        | 2      | 0, 1, 2 | 0: DC, 1: AC, 2: HF
+sweep           | 3      | 0, 1, 2 | Auto, Normal,Once
+holdoff         | 4      | 4 bytes | level???
+raisefall       | 5      | 0, 1    | Rise: 0, Fall: 1
+level           | 6      | 4 bytes | Level
+
+Video properties:
+
+Property        | Number | Values  | Notes
+Modulation      | 2      | 0, 1, 2 | 0: NTSC, 1: PAL, 2: SECAM
+Sync            | 3      | 0-4  (* | 0: LINE, 1: FIELd, 2: ODD, 3: EVEN, 4: LNUM
+holdoff         | 4      | 4 bytes |
+
+(* When property number is 4 (Line number) 4 bytes are appended as line number.
+
+Slope properties:
+
+Property        | Number | Values    | Notes
+uppest          | 2      | 1 byte    | Wild guess: 8-bit resolution of current voltrange
+sweep           | 3      | 4 bytes   | No idea
+holdoff         | 4      | 4 bytes   |
+condition       | 5      | 5 bytes(* |
+lowest          | 6      | 1 bytes   | Same thing as highest, but different limitation.
+
+(* first byte is 0:R>, 1:R=, 2:R<,  3:F>, 4:F=, 5:F<, where R: rising, F: falling
+last 4 bytes are time maybe or level?
+
+Pulse properties:
+
+Property        | Number | Values    | Notes
+Coupling        | 2      | 0, 1, 2   | 0: DC, 1: AC, 2: HF
+sweep           | 3      | 0, 1, 2 | Auto, Normal,Once
+holdoff         | 4      | 4 bytes | level???
+condition       | 5      | 5 bytes(* | See Slope
+level           | 6      | 4 bytes | Level
+
+Questions:
+
+What are the units of various values?
+
+2.3 MCH Manage Channel
+
+012 | 3       | 4    | 5 / 5678
+MCH | channel | mode | value
+
+Mode                 | Value
+'o'noff              | 0:Off, 1:on
+'c'oupling           | 0: DC, 1: AC, 2:GND
+'v'oltage base index | Index to voltages
+'z'ero               | Position of zero, 4 bytes
+'b'andlimit          | ???
+
+VDS2062 voltages in millivolts
+5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000
+
+2.4 MAQ Manage AQusition
+
+Or Set sampling mode.
+
+123 | 4    | 5
+MAQ | mode | extra
+
+      0:Sample
+      1:Peak
+      2:Average
+             0: Mode is 2 - Average Not sent in other modes
+
+Extra byte isn't sent if mode isn't average
+
+2.5 MSYOUT Manage Sync OUTput
+012345 | 6
+MSYOUT | value
+
+Value is boolean 1/0
+Applies network values
+
+2.6 MNT Manage NeTwork
+
+012 | 3      | 4567 | 89 10 11 | 12 13 14 15 | 16 17 18 19 | 20 21 22 23 24 25
+MNT | On/Off | IP   | port     | gW          | smaddr      | macaddr
+      1 / 0
+
+If on/off is 0 (off) message ends after it. Values are applied with MSYOUT
+
+2.7 MFT Manage FFT
+
+012 | 3      | 4
+MFT | on/off | fft channel
+      1/0
+               0x01, 0x02, 0x04 0x08 (1 << channel)
+If on/off is 0 (off) message ends after it.
+
+2.8 MHR Manage Horizontal R???
+
+012 | 3   | 4567
+MHR | 'v' | value
+
+3 Run and stop
+
+Next USB packet starts data aquisition.
+
+0010                                    3a 53 44 53 4c               :SDSL
+0020  52 55 4e 23                                        RUN#
+
+3.1 :SDSLRUN# Run
+
+012345678 
+:SDSLRUN# 
+
+This command has no repply
+
+3.2 :SDSLSTP# Stop
+
+012345678
+:SDSLSTP#
+
+Reply:
+01234567 | ???
+:SDSLSTP | 1
+
+That last one isn't used for anything.
+
+3.3 ???
+":SDSLCSP#"
+":SDSLCRS#"
+
+These are used in SelfCorrectedProgressJobUnit
+
+4 Getting the data
+
+4.1 :SGAL# System Give ALl
+
+First packet:
+12 | 3 4 5 6
+?? | length
+
+Packet has length of next packet.
+Second packet can have many lines
+Second packet:
+
+012 | 3   |    4    |
+MTR | s/a | e/p/s/v | more data....
+
+012 | 3 | 4
+MCH | o | on / off
+MCH | c | coupling index
+MCH | v | voltage index
+MCH | i | Inverse
+MCH | b | Bandlimit
+012 | 3 | 4 5 6 7
+MCH | z | position
+
+Might be sample, peak and average as in MAQ
+012 | 3 | 4
+MAQ | 0/1
+MAQ | 2 | ??
+
+012 | 3 | 4
+MHR | b | Time base index
+012 | 3 | 4 5 6 7
+MHR | v | Horizontal time point
+
+012   3
+MDP | deep memory index
+
+012 | 1          | 2345    | 6789 | 10 11 12 13 | 14 15 16 17 | 18 19 20 21 22 23
+MNT | net on/off | ip addr | port |   gateway   |  sm         |     MAC address
+All 24 bytes are sent always.
+
+4.2 :SGD System Give Data
+
+Data is asked from deep memory with SGD command
+
+0010                                     3a 53 47 44 54               :SGDT
+0020  03 00 00 00 00 00 00 00  00 23                     ........ .#
+
+0123 | 4           | 5       | 6 | 7 | 8  
+:SGD | Deep memory | chlflag | 0 | 0 | 0x23
+
+And responce is sent in two packets.
+
+0010                                     3a 47 44 54 01              :GDT.
+0020  00 04 03 00 00 10 24 00  00 00 00                  ......$. ...
+
+
+CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK
+
+012 | 3           | 4   | 5              | 6              | 789 10
+:GD | deep memory | CPL | Trigger status | Channel status | next packet size
+      Often 'M'
+
+                    Progress can be calculated from this ???
+                    
+                          0:Auto, 1:Ready, 2:Trg_d, 3:Scan, 4:Stop, 5:Error,
+                          6:ReCfg, 7:AutoSetting, 8:Offline, 9:USBFound,
+                          10:USBDrvErr, 11:MachineNotSupport, 12:Linking,
+                          13:Connect, 14:Detect, 15:Initialize
+
+                                           Number of one bits is channel num?
+                                                           
+Second packet starts
+
+0010                                    00 00 10 24 00               ...$.
+0020  00 00 00 00 00 10 04 00  00 00 00 00 00 00 00 00   ........ ........
+0030  00 00 00 00 00 0f a0 00  00 00 00 34 35 34 35 34   ........ ...45454
+0040  35 34 35 35 35 34 34 35  35 34 35 34 35 34 34 35   54555445 54545445
+0050  35 34 35 34 35 34 34 34  35 34 34 35 35 34 35 35   54545444 54455455
+0060  35 34 35 34 36 34 35 34  35 34 35 34 35 33 33 35   54546454 54545335
+0070  35 34 35 35 35 34 34 35  35 33 34 35 35 33 35 35   54555445 53455355
+0       | 1 2 3 4 | 5 6 7 8 | 9 10 11 12 | 13 14 15 16 | 17 18 19 20
+channel | datalen | base f  | ref f      | initpos     | sdl
+
+| 21 22 23 24   | 25 26 27 28    |  29 30 31 32     | 33 34 35 36
+| plug data len | sine plug rate | linear plug rate | plugged trig offset
+
+CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK
+
+
+
