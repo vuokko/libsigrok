@@ -176,8 +176,8 @@ static int dev_open(struct sr_dev_inst *sdi)
 		return SR_ERR;
 		}
 	}
-	/* Do a light reset */
-	claim_ret = libusb_set_configuration(usb->devhdl, USB_CONFIG);
+	/* Do a light reset. Or don't. Why this breaks thigs? */
+	/*claim_ret = libusb_set_configuration(usb->devhdl, USB_CONFIG);
 	if (claim_ret == 0)
 		claim_ret = libusb_set_configuration(usb->devhdl, USB_CONFIG);
 	if (claim_ret != 0) {
@@ -185,7 +185,7 @@ static int dev_open(struct sr_dev_inst *sdi)
 			libusb_error_name(ret));
 		sr_usb_close(usb);
 		return SR_ERR;
-	}
+	}*/
 	/* Claim the interface for our use. */
 	if ((claim_ret = libusb_claim_interface(usb->devhdl,
 		USB_INTERFACE)) != 0) {
