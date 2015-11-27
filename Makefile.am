@@ -151,7 +151,8 @@ libsigrok_la_SOURCES += \
 	src/dmm/bm25x.c \
 	src/dmm/ut71x.c \
 	src/dmm/ut372.c \
-	src/dmm/vc870.c
+	src/dmm/vc870.c \
+	src/dmm/dtm0660.c
 
 # Hardware (LCR chip parsers)
 if NEED_SERIAL
@@ -322,11 +323,11 @@ libsigrok_la_SOURCES += \
 	src/hardware/kern-scale/protocol.c \
 	src/hardware/kern-scale/api.c
 endif
-if HW_KORAD_KDXXXXP
+if HW_KORAD_KAXXXXP
 libsigrok_la_SOURCES += \
-	src/hardware/korad-kdxxxxp/protocol.h \
-	src/hardware/korad-kdxxxxp/protocol.c \
-	src/hardware/korad-kdxxxxp/api.c
+	src/hardware/korad-kaxxxxp/protocol.h \
+	src/hardware/korad-kaxxxxp/protocol.c \
+	src/hardware/korad-kaxxxxp/api.c
 endif
 if HW_LASCAR_EL_USB
 libsigrok_la_SOURCES += \
@@ -411,6 +412,8 @@ if HW_SYSCLK_LWLA
 libsigrok_la_SOURCES += \
 	src/hardware/sysclk-lwla/lwla.h \
 	src/hardware/sysclk-lwla/lwla.c \
+	src/hardware/sysclk-lwla/lwla1016.c \
+	src/hardware/sysclk-lwla/lwla1034.c \
 	src/hardware/sysclk-lwla/protocol.h \
 	src/hardware/sysclk-lwla/protocol.c \
 	src/hardware/sysclk-lwla/api.c
