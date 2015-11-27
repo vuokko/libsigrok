@@ -8,9 +8,9 @@ Device Descriptor:
   bLength                18
   bDescriptorType         1
   bcdUSB               2.00
-  bDeviceClass            0 
-  bDeviceSubClass         0 
-  bDeviceProtocol         0 
+  bDeviceClass            0
+  bDeviceSubClass         0
+  bDeviceProtocol         0
   bMaxPacketSize0        64
   idVendor           0x5345 Owon
   idProduct          0x1234 PDS6062T Oscilloscope  ### Maybe not...
@@ -25,7 +25,7 @@ Device Descriptor:
     wTotalLength           32
     bNumInterfaces          1
     bConfigurationValue     1
-    iConfiguration          0 
+    iConfiguration          0
     bmAttributes         0xc0
       Self Powered
     MaxPower              500mA
@@ -36,9 +36,9 @@ Device Descriptor:
       bAlternateSetting       0
       bNumEndpoints           2
       bInterfaceClass         5 Physical Interface Device
-      bInterfaceSubClass      6 
-      bInterfaceProtocol     80 
-      iInterface              0 
+      bInterfaceSubClass      6
+      bInterfaceProtocol     80
+      iInterface              0
       Endpoint Descriptor:
         bLength                 7
         bDescriptorType         5
@@ -63,14 +63,57 @@ Device Qualifier (for other device speed):
   bLength                10
   bDescriptorType         6
   bcdUSB               2.00
-  bDeviceClass            0 
-  bDeviceSubClass         0 
-  bDeviceProtocol         0 
+  bDeviceClass            0
+  bDeviceSubClass         0
+  bDeviceProtocol         0
   bMaxPacketSize0        64
   bNumConfigurations      1
 Device Status:     0x7301
   Self Powered                       ### BULLSHIT!
-        
+
+
+With usbview:
+
+Oscilloscope
+Manufacturer: Oscilloscope
+Serial Number: VDS2062
+Speed: 480Mb/s (high)
+USB Version:  2.00
+Device Class: 00(>ifc )
+Device Subclass: 00
+Device Protocol: 00
+Maximum Default Endpoint Size: 64
+Number of Configurations: 1
+Vendor Id: 5345
+Product Id: 1234
+Revision Number:  2.00
+
+Config Number: 1
+	Number of Interfaces: 1
+	Attributes: c0
+	MaxPower Needed: 500mA
+
+	Interface Number: 0
+		Name: (none)
+		Alternate Number: 0
+		Class: 05(PID  )
+		Sub Class: 06
+		Protocol: 50
+		Number of Endpoints: 2
+
+			Endpoint Address: 81
+			Direction: in
+			Attribute: 2
+			Type: Bulk
+			Max Packet Size: 512
+			Interval: 0ms
+
+			Endpoint Address: 03
+			Direction: out
+			Attribute: 2
+			Type: Bulk
+			Max Packet Size: 512
+			Interval: 0ms
 
 Protocol
 
@@ -98,12 +141,12 @@ Protocol primitives are
 "MDP"                   paragraph 2.1
 "MTR"                   paragraph 2.2
 "MCH"                   paragraph 2.3
-"MAQ"                   paragraph 2.4 
+"MAQ"                   paragraph 2.4
 "MSYOUT"                paragraph 2.5
 "MNT"                   paragraph 2.6
 "MFT"                   paragraph 2.7
 "MHR"                   paragraph 2.8
-":SDSLRUN#"             paragraph 3.1 
+":SDSLRUN#"             paragraph 3.1
 ":SDSLSTP#"             paragraph 3.2
 ":SDSLCSP#"             paragraph 3.3
 ":SDSLCRS#"             paragraph 3.3
@@ -167,7 +210,7 @@ What are fields 4 to 8? and how they change the behaviour of the Java software?
 0020  04 4d 44 50 01                                     .MDP.
 
 In the beginning there is :M 0x00 0x00 0x00 0x00 And the length of the message.
-This header is 
+This header is
 2.1 MDP
 
 Set Memory Deep Index. In capture it is set to 1.
@@ -191,7 +234,7 @@ What is deep memory and what do we want from it?
 
 This packet has also other commands than MTR
 
-012 |  3  |    4   |   5    |    6    |  ... 
+012 |  3  |    4   |   5    |    6    |  ...
 MTR |mode |channel |trgType |property | Values
      's'ingle
      'a'lternative
@@ -316,8 +359,8 @@ Next USB packet starts data aquisition.
 
 3.1 :SDSLRUN# Run
 
-012345678 
-:SDSLRUN# 
+012345678
+:SDSLRUN#
 
 This command has no repply
 
@@ -386,7 +429,7 @@ Data is asked from deep memory with SGD command
 0010                                     3a 53 47 44 54               :SGDT
 0020  03 00 00 00 00 00 00 00  00 23                     ........ .#
 
-0123 | 4           | 5       | 6 | 7 | 8  
+0123 | 4           | 5       | 6 | 7 | 8
 :SGD | Deep memory | chlflag | 0 | 0 | 0x23
 
 And responce is sent in two packets.
@@ -402,14 +445,14 @@ CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK
       Often 'M'
 
                     Progress can be calculated from this ???
-                    
+
                           0:Auto, 1:Ready, 2:Trg_d, 3:Scan, 4:Stop, 5:Error,
                           6:ReCfg, 7:AutoSetting, 8:Offline, 9:USBFound,
                           10:USBDrvErr, 11:MachineNotSupport, 12:Linking,
                           13:Connect, 14:Detect, 15:Initialize
 
                                            Number of one bits is channel num?
-                                                           
+
 Second packet starts
 
 0010                                    00 00 10 24 00               ...$.
@@ -426,6 +469,4 @@ channel | datalen | base f  | ref f      | initpos     | sdl
 | plug data len | sine plug rate | linear plug rate | plugged trig offset
 
 CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK CHECK
-
-
 
